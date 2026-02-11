@@ -1,0 +1,8 @@
+
+{
+  "name": "ForgeStudios AI Editor",
+  "description": "A minimalist, tech-focused image editing application powered by Gemini 2.5 Flash Image. Edit photos with natural language prompts.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
