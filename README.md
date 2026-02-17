@@ -1,43 +1,65 @@
 # ForgeStudios Logo Maker (Gemini)
 
-A Vite + React website to generate and edit logos using Gemini image generation.
+# ForgeStudios Logo Maker
+
+## Why you see `cdn.tailwindcss.com should not be used in production`
+That warning appears because Tailwind's CDN script is meant for quick prototypes, not production apps.
+
+For production, use one of these:
+- **Tailwind CLI** build step
+- **PostCSS plugin** in your Vite build
+
+> This repository currently uses utility classes heavily, so proper Tailwind build integration is required before deploying if the CDN script is still present.
 
 ## Environment variables
-The app reads your API key from:
+This app expects the Gemini API key in a Vite-exposed variable:
 
 - `VITE_GEMINI_API_KEY`
 
-The key is used in the Gemini REST request URL:
+Use `.env.example` as the template and create your own local `.env.local`.
 
-- `POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=<VITE_GEMINI_API_KEY>`
+### Local setup
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Create `.env.local`:
+   ```bash
+   cp .env.example .env.local
+   ```
+3. Put your key in `.env.local`:
+   ```bash
+   VITE_GEMINI_API_KEY=your_real_key_here
+   ```
+4. Start dev server:
+   ```bash
+   npm run dev
+   ```
 
-### Local
-1. Install dependencies: `npm install`
-2. Create `.env.local` from template:
-   - `cp .env.example .env.local`
-3. Set your key:
-   - `VITE_GEMINI_API_KEY=your_key_here`
-4. Run: `npm run dev`
+## GitHub Actions secrets (.env in GitHub)
+If you deploy/build from GitHub Actions, add secrets in:
 
-### Vercel
-You already set this correctly; keep this exact name:
+- **Repository → Settings → Secrets and variables → Actions → New repository secret**
 
-- **Name**: `VITE_GEMINI_API_KEY`
-- **Value**: your Gemini API key
-- **Scope**: Production (and Preview/Development if needed)
+Add:
+- `VITE_GEMINI_API_KEY`
 
-Then redeploy.
-
-### GitHub Actions (if you build/deploy from GitHub)
-1. Add secret in repo settings: `VITE_GEMINI_API_KEY`
-2. Map it in workflow:
+Then expose it in your workflow step:
 
 ```yaml
 env:
   VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
 ```
 
-## Tailwind CDN warning
-If you see `cdn.tailwindcss.com should not be used in production`, remove the CDN script from `index.html`.
+## Vercel environment variables
+In Vercel:
 
-This repository no longer depends on Tailwind CDN and uses local CSS (`index.css`) instead.
+1. Open your project.
+2. Go to **Settings → Environment Variables**.
+3. Add:
+   - **Name:** `VITE_GEMINI_API_KEY`
+   - **Value:** your Gemini API key
+   - **Environments:** Production (and Preview/Development if needed)
+4. Redeploy the project.
+
+Because this is a Vite frontend variable, it is bundled client-side. Do **not** put highly sensitive server-only credentials in `VITE_*` variables.

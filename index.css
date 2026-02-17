@@ -98,4 +98,41 @@ textarea {
 @media (max-width: 1050px) {
   .layout { grid-template-columns: 1fr; }
   .preview-area { min-height: 320px; }
+body {
+  background-color: #0f172a;
+  color: #f8fafc;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.electric-blue {
+  color: #00e5ff;
+}
+
+.bg-electric-blue {
+  background-color: #00e5ff;
+}
+
+.border-electric-blue {
+  border-color: #00e5ff;
+}
+
+.shadow-glow {
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-2px);
+  }
+  75% {
+    transform: translateX(2px);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.35s ease-in-out 2;
 }
