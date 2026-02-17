@@ -1,20 +1,43 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# ForgeStudios Logo Maker (Gemini)
 
-# Run and deploy your AI Studio app
+A Vite + React website to generate and edit logos using Gemini image generation.
 
-This contains everything you need to run your app locally.
+## Environment variables
+The app reads your API key from:
 
-View your app in AI Studio: https://ai.studio/apps/temp/1
+- `VITE_GEMINI_API_KEY`
 
-## Run Locally
+The key is used in the Gemini REST request URL:
 
-**Prerequisites:**  Node.js
+- `POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=<VITE_GEMINI_API_KEY>`
 
+### Local
+1. Install dependencies: `npm install`
+2. Create `.env.local` from template:
+   - `cp .env.example .env.local`
+3. Set your key:
+   - `VITE_GEMINI_API_KEY=your_key_here`
+4. Run: `npm run dev`
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### Vercel
+You already set this correctly; keep this exact name:
+
+- **Name**: `VITE_GEMINI_API_KEY`
+- **Value**: your Gemini API key
+- **Scope**: Production (and Preview/Development if needed)
+
+Then redeploy.
+
+### GitHub Actions (if you build/deploy from GitHub)
+1. Add secret in repo settings: `VITE_GEMINI_API_KEY`
+2. Map it in workflow:
+
+```yaml
+env:
+  VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
+```
+
+## Tailwind CDN warning
+If you see `cdn.tailwindcss.com should not be used in production`, remove the CDN script from `index.html`.
+
+This repository no longer depends on Tailwind CDN and uses local CSS (`index.css`) instead.
