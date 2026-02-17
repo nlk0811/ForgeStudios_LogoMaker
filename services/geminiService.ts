@@ -6,7 +6,7 @@ export class GeminiService {
 
   private static getClient(): GoogleGenAI {
     if (!this.ai) {
-      this.ai = new GoogleGenAI({ apiKey: env.API_KEY || '' });
+      this.ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY || '' });
     }
     return this.ai;
   }
