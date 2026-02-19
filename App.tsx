@@ -6,7 +6,7 @@ import { EditedImage, ProcessingStatus } from './types';
 type Mode = 'generate' | 'edit';
 
 const STARTER_PROMPT =
-  "Minimalist vector logo for 'ForgeStudios' with a connected network-node style 'F', electric blue accent, charcoal base, white background, flat and modern.";
+  "Minimalist vector logo for 'ForgeStudios', futuristic monogram F, electric blue highlights, charcoal body, flat vector style, white or transparent background.";
 
 const App: React.FC = () => {
   const [mode, setMode] = useState<Mode>('generate');
@@ -14,15 +14,21 @@ const App: React.FC = () => {
   const [currentImage, setCurrentImage] = useState<string | null>(null);
   const [originalImage, setOriginalImage] = useState<string | null>(null);
   const [status, setStatus] = useState<ProcessingStatus>('idle');
-  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [errorMessage, setErrorMessage] = useState('');
   const [history, setHistory] = useState<EditedImage[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const isBusy = status === 'processing' || status === 'uploading';
 
+  const mainTitle = mode === 'generate' ? 'Ready to generate' : 'Ready to edit';
+  const mainSubtitle =
+    mode === 'generate'
+      ? 'Describe your vision in the prompt box below'
+      : 'Upload source image and describe the transformation';
+
   const primaryActionText = useMemo(() => {
-    if (status === 'processing') return 'Processing...';
-    return mode === 'generate' ? 'Generate logo' : 'Edit logo';
+    if (status === 'processing') return '...';
+    return mode === 'generate' ? 'Generate' : 'Apply';
   }, [mode, status]);
 
   const onUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,29 +40,30 @@ const App: React.FC = () => {
 
     const reader = new FileReader();
     reader.onload = () => {
-      const result = reader.result as string;
-      setOriginalImage(result);
-      setCurrentImage(result);
+      const base64 = reader.result as string;
+      setOriginalImage(base64);
+      setCurrentImage(base64);
       setMode('edit');
       setStatus('idle');
     };
     reader.onerror = () => {
       setStatus('error');
-      setErrorMessage('Unable to read uploaded image.');
+      setErrorMessage('Could not read the selected image file.');
     };
+
     reader.readAsDataURL(file);
   };
 
-  const onSubmit = async () => {
+  const onGenerateOrEdit = async () => {
     if (!prompt.trim()) {
       setStatus('error');
-      setErrorMessage('Please enter a prompt/instruction first.');
+      setErrorMessage('Please enter a prompt first.');
       return;
     }
 
     if (mode === 'edit' && !currentImage) {
       setStatus('error');
-      setErrorMessage('Upload an image before using edit mode.');
+      setErrorMessage('Please upload a source image for edit mode.');
       return;
     }
 
@@ -71,7 +78,7 @@ const App: React.FC = () => {
 
       if (!result) {
         setStatus('error');
-        setErrorMessage('Gemini returned no image. Try a clearer prompt.');
+        setErrorMessage('No image was returned. Try a clearer logo prompt.');
         return;
       }
 
@@ -84,109 +91,133 @@ const App: React.FC = () => {
       };
 
       setCurrentImage(result);
-      if (mode === 'generate' || !originalImage) setOriginalImage(result);
+      if (mode === 'generate' || !originalImage) {
+        setOriginalImage(result);
+      }
       setHistory((prev) => [entry, ...prev]);
       setStatus('idle');
     } catch (error) {
       setStatus('error');
-      setErrorMessage(error instanceof Error ? error.message : 'Something went wrong.');
+      setErrorMessage(error instanceof Error ? error.message : 'Request failed.');
     }
   };
 
+  const onRevert = () => {
+    if (!originalImage || isBusy) return;
+    setCurrentImage(originalImage);
+  };
+
   const onDownload = () => {
-    if (!currentImage) return;
-    const a = document.createElement('a');
-    a.href = currentImage;
-    a.download = `forgestudios-logo-${Date.now()}.png`;
-    a.click();
+    if (!currentImage || isBusy) return;
+    const link = document.createElement('a');
+    link.href = currentImage;
+    link.download = `forgestudios-logo-${Date.now()}.png`;
+    link.click();
   };
 
   return (
-    <div className="page">
-      <header className="header">
-        <div className="brand">
-          <Logo className="brand-logo" />
-          <div>
-            <h1>ForgeStudios Logo Maker</h1>
-            <p>Gemini-powered logo generation and editing</p>
-          </div>
+    <div className="app-shell">
+      <header className="topbar">
+        <div className="brand-wrap">
+          <Logo className="brand-icon" />
+          <h1>
+            FORGE<span>STUDIOS</span>
+          </h1>
         </div>
-        <div className="header-actions">
-          <button className={`mode-btn ${mode === 'generate' ? 'active' : ''}`} onClick={() => setMode('generate')}>
-            Generate
+
+        <div className="mode-switch" role="tablist" aria-label="Mode switch">
+          <button className={mode === 'edit' ? 'active' : ''} onClick={() => setMode('edit')}>
+            EDITOR
           </button>
-          <button className={`mode-btn ${mode === 'edit' ? 'active' : ''}`} onClick={() => setMode('edit')}>
-            Edit
+          <button className={mode === 'generate' ? 'active' : ''} onClick={() => setMode('generate')}>
+            GENERATOR
           </button>
-          <button className="upload-btn" onClick={() => inputRef.current?.click()}>
-            Upload Source
-          </button>
-          <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={onUpload} />
         </div>
+
+        <button className="source-btn" onClick={() => inputRef.current?.click()}>
+          + Source
+        </button>
+        <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={onUpload} />
       </header>
 
-      <main className="layout">
-        <section className="card preview-card">
-          <div className="preview-area">
+      <main className="workspace">
+        <section className="canvas-panel panel">
+          <div className="canvas-frame">
             {currentImage ? (
-              <img src={currentImage} alt="Generated logo" />
+              <img src={currentImage} alt="Generated logo preview" className="preview-image" />
             ) : (
-              <div className="empty-state">
-                <h2>No logo yet</h2>
-                <p>Generate a new logo, or upload one and edit it.</p>
+              <div className="center-empty">
+                <div className="spark-box">✦</div>
+                <h2>{mainTitle}</h2>
+                <p>{mainSubtitle}</p>
               </div>
             )}
           </div>
-          <div className="preview-actions">
-            <button onClick={onDownload} disabled={!currentImage || isBusy}>
-              Download PNG
-            </button>
-            <button
-              onClick={() => setCurrentImage(originalImage)}
-              disabled={!originalImage || originalImage === currentImage || isBusy}
-            >
-              Revert to original
-            </button>
+
+          <div className="prompt-panel">
+            <div className="prompt-header">
+              <span>{mode === 'generate' ? 'GENERATION PROMPT' : 'EDIT INSTRUCTION'}</span>
+              <button onClick={() => setPrompt(STARTER_PROMPT)}>LOAD LOGO PRESET</button>
+            </div>
+            <div className="prompt-input-row">
+              <textarea
+                rows={3}
+                value={prompt}
+                onChange={(event) => setPrompt(event.target.value)}
+                placeholder={mode === 'generate' ? 'Describe your logo idea...' : 'Describe how to edit the uploaded logo...'}
+                disabled={isBusy}
+              />
+              <button className="send-btn" onClick={onGenerateOrEdit} disabled={isBusy} title={primaryActionText}>
+                {primaryActionText}
+              </button>
+            </div>
+
+            <div className="bottom-actions">
+              <div className="left-actions">
+                <button onClick={onRevert} disabled={!originalImage || originalImage === currentImage || isBusy}>
+                  REVERT
+                </button>
+                <button onClick={onDownload} disabled={!currentImage || isBusy}>
+                  EXPORT
+                </button>
+              </div>
+              {status === 'error' && <p className="error-text">⚠ PROCESS ABORTED: {errorMessage}</p>}
+            </div>
           </div>
         </section>
 
-        <section className="card controls-card">
-          <label htmlFor="prompt">{mode === 'generate' ? 'Prompt' : 'Edit Instruction'}</label>
-          <textarea
-            id="prompt"
-            rows={6}
-            value={prompt}
-            onChange={(event) => setPrompt(event.target.value)}
-            placeholder={mode === 'generate' ? 'Describe the logo you want...' : 'Describe how to edit this logo...'}
-            disabled={isBusy}
-          />
-          <button className="primary" onClick={onSubmit} disabled={isBusy}>
-            {primaryActionText}
-          </button>
-          <div className="env-hint">
-            API key source: <code>import.meta.env.VITE_GEMINI_API_KEY</code> (Vercel env variable)
-          </div>
-          {status === 'error' && <p className="error">{errorMessage}</p>}
-        </section>
+        <aside className="side-stack">
+          <section className="history-panel panel">
+            <h3>FORGE HISTORY</h3>
+            {history.length === 0 ? (
+              <div className="history-empty">
+                <p>FORGE HISTORY IS EMPTY</p>
+              </div>
+            ) : (
+              <ul>
+                {history.map((item) => (
+                  <li key={item.id} onClick={() => setCurrentImage(item.editedUrl)}>
+                    <img src={item.editedUrl} alt={item.prompt} />
+                    <div>
+                      <p>{item.prompt}</p>
+                      <span>{new Date(item.timestamp).toLocaleTimeString()}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
 
-        <section className="card history-card">
-          <h3>History</h3>
-          {history.length === 0 ? (
-            <p className="muted">No generations yet.</p>
-          ) : (
+          <section className="notes-panel panel">
+            <h4>LABORATORY NOTES</h4>
             <ul>
-              {history.map((item) => (
-                <li key={item.id} onClick={() => setCurrentImage(item.editedUrl)}>
-                  <img src={item.editedUrl} alt={item.prompt} />
-                  <div>
-                    <p>{item.prompt}</p>
-                    <span>{new Date(item.timestamp).toLocaleString()}</span>
-                  </div>
-                </li>
-              ))}
+              <li>Use GENERATOR mode for pure creation.</li>
+              <li>EDITOR mode preserves source structure.</li>
+              <li>Use “flat”, “minimalist”, “vector logo” for cleaner results.</li>
+              <li>API key source: import.meta.env.VITE_GEMINI_API_KEY.</li>
             </ul>
-          )}
-        </section>
+          </section>
+        </aside>
       </main>
     </div>
   );
