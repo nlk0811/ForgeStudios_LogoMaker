@@ -4,9 +4,23 @@ import { GeminiService } from './services/geminiService';
 import { EditedImage, ProcessingStatus } from './types';
 
 type Mode = 'generate' | 'edit';
+type Review = {
+  id: string;
+  author: string;
+  rating: number;
+  comment: string;
+  createdAt: number;
+};
 
 const STARTER_PROMPT =
   "Minimalist vector logo for 'ForgeStudios', futuristic monogram F, electric blue highlights, charcoal body, flat vector style, white or transparent background.";
+const DEFAULT_REVIEW: Review = {
+  id: crypto.randomUUID(),
+  author: 'Anonymous',
+  rating: 1,
+  comment: 'UI is mid',
+  createdAt: Date.now(),
+};
 
 const App: React.FC = () => {
   const [mode, setMode] = useState<Mode>('generate');
@@ -16,6 +30,10 @@ const App: React.FC = () => {
   const [status, setStatus] = useState<ProcessingStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [history, setHistory] = useState<EditedImage[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([DEFAULT_REVIEW]);
+  const [reviewAuthor, setReviewAuthor] = useState('');
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   const isBusy = status === 'processing' || status === 'uploading';
@@ -113,6 +131,24 @@ const App: React.FC = () => {
     link.href = currentImage;
     link.download = `forgestudios-logo-${Date.now()}.png`;
     link.click();
+  };
+
+  const onSubmitReview = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!reviewComment.trim()) return;
+
+    const newReview: Review = {
+      id: crypto.randomUUID(),
+      author: reviewAuthor.trim() || 'Anonymous',
+      rating: reviewRating,
+      comment: reviewComment.trim(),
+      createdAt: Date.now(),
+    };
+
+    setReviews((prev) => [newReview, ...prev]);
+    setReviewAuthor('');
+    setReviewRating(5);
+    setReviewComment('');
   };
 
   return (
@@ -219,6 +255,48 @@ const App: React.FC = () => {
           </section>
         </aside>
       </main>
+
+      <section className="reviews-panel panel">
+        <h3>WEBSITE REVIEWS</h3>
+
+        <form className="review-form" onSubmit={onSubmitReview}>
+          <input
+            type="text"
+            value={reviewAuthor}
+            onChange={(event) => setReviewAuthor(event.target.value)}
+            placeholder="Your name (optional)"
+            maxLength={32}
+          />
+          <select value={reviewRating} onChange={(event) => setReviewRating(Number(event.target.value))}>
+            {[5, 4, 3, 2, 1].map((value) => (
+              <option key={value} value={value}>
+                {value} star{value !== 1 ? 's' : ''}
+              </option>
+            ))}
+          </select>
+          <textarea
+            value={reviewComment}
+            onChange={(event) => setReviewComment(event.target.value)}
+            placeholder="Share your thoughts about the site..."
+            rows={2}
+            required
+          />
+          <button type="submit">POST REVIEW</button>
+        </form>
+
+        <ul className="review-list">
+          {reviews.map((review) => (
+            <li key={review.id}>
+              <div className="review-meta">
+                <strong>{review.author}</strong>
+                <span>{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</span>
+              </div>
+              <p>{review.comment}</p>
+              <small>{new Date(review.createdAt).toLocaleString()}</small>
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   );
 };
