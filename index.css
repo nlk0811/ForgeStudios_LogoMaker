@@ -384,6 +384,95 @@ textarea {
   line-height: 1.4;
 }
 
+.reviews-panel {
+  margin: 0 14px 14px;
+  background: #05080f;
+  border: 1px solid #173968;
+  border-radius: 22px;
+  padding: 18px;
+}
+
+.reviews-panel h3 {
+  margin: 0 0 14px;
+  color: #94afd6;
+  letter-spacing: 0.14em;
+  font-size: 13px;
+}
+
+.review-form {
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.review-form input,
+.review-form select,
+.review-form textarea {
+  border: 1px solid #1b3f74;
+  border-radius: 10px;
+  background: #07142b;
+  color: #dceaff;
+  padding: 10px 12px;
+}
+
+.review-form textarea {
+  grid-column: 1 / -1;
+  resize: vertical;
+}
+
+.review-form button {
+  grid-column: 1 / -1;
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #04202d;
+  background: linear-gradient(180deg, #21f5ff 0%, #02d3ff 100%);
+}
+
+.review-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.review-list li {
+  border: 1px solid #183a68;
+  background: #07142b;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.review-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+
+.review-meta strong {
+  font-size: 13px;
+}
+
+.review-meta span {
+  color: #f9cc62;
+  letter-spacing: 0.06em;
+}
+
+.review-list p {
+  margin: 8px 0 6px;
+  color: #c5d9f8;
+}
+
+.review-list small {
+  color: #6f8cb4;
+}
+
 @media (max-width: 1140px) {
   .workspace {
     grid-template-columns: 1fr;
@@ -429,5 +518,9 @@ textarea {
   .bottom-actions {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .review-form {
+    grid-template-columns: 1fr;
   }
 }
