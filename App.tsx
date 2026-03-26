@@ -4,9 +4,32 @@ import { GeminiService } from './services/geminiService';
 import { EditedImage, ProcessingStatus } from './types';
 
 type Mode = 'generate' | 'edit';
+type ReviewReply = {
+  id: string;
+  author: string;
+  message: string;
+  createdAt: number;
+};
+
+type Review = {
+  id: string;
+  author: string;
+  rating: number;
+  comment: string;
+  createdAt: number;
+  replies: ReviewReply[];
+};
 
 const STARTER_PROMPT =
   "Minimalist vector logo for 'ForgeStudios', futuristic monogram F, electric blue highlights, charcoal body, flat vector style, white or transparent background.";
+const DEFAULT_REVIEW: Review = {
+  id: crypto.randomUUID(),
+  author: 'Anonymous',
+  rating: 1,
+  comment: 'UI is mid',
+  createdAt: Date.now(),
+  replies: [],
+};
 
 const App: React.FC = () => {
   const [mode, setMode] = useState<Mode>('generate');
@@ -16,6 +39,11 @@ const App: React.FC = () => {
   const [status, setStatus] = useState<ProcessingStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [history, setHistory] = useState<EditedImage[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([DEFAULT_REVIEW]);
+  const [reviewAuthor, setReviewAuthor] = useState('');
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
   const inputRef = useRef<HTMLInputElement>(null);
 
   const isBusy = status === 'processing' || status === 'uploading';
@@ -113,6 +141,54 @@ const App: React.FC = () => {
     link.href = currentImage;
     link.download = `forgestudios-logo-${Date.now()}.png`;
     link.click();
+  };
+
+  const onSubmitReview = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!reviewComment.trim()) return;
+
+    const newReview: Review = {
+      id: crypto.randomUUID(),
+      author: reviewAuthor.trim() || 'Anonymous',
+      rating: reviewRating,
+      comment: reviewComment.trim(),
+      createdAt: Date.now(),
+      replies: [],
+    };
+
+    setReviews((prev) => [newReview, ...prev]);
+    setReviewAuthor('');
+    setReviewRating(5);
+    setReviewComment('');
+  };
+
+  const onReplyChange = (reviewId: string, value: string) => {
+    setReplyDrafts((prev) => ({ ...prev, [reviewId]: value }));
+  };
+
+  const onSubmitReply = (event: React.FormEvent<HTMLFormElement>, reviewId: string) => {
+    event.preventDefault();
+    const message = (replyDrafts[reviewId] || '').trim();
+    if (!message) return;
+
+    const reply: ReviewReply = {
+      id: crypto.randomUUID(),
+      author: 'You',
+      message,
+      createdAt: Date.now(),
+    };
+
+    setReviews((prev) =>
+      prev.map((review) =>
+        review.id === reviewId
+          ? {
+              ...review,
+              replies: [...review.replies, reply],
+            }
+          : review,
+      ),
+    );
+    setReplyDrafts((prev) => ({ ...prev, [reviewId]: '' }));
   };
 
   return (
@@ -219,6 +295,74 @@ const App: React.FC = () => {
           </section>
         </aside>
       </main>
+
+      <section className="reviews-panel panel">
+        <h3>WEBSITE REVIEWS</h3>
+
+        <form className="review-form" onSubmit={onSubmitReview}>
+          <input
+            type="text"
+            value={reviewAuthor}
+            onChange={(event) => setReviewAuthor(event.target.value)}
+            placeholder="Your name (optional)"
+            maxLength={32}
+          />
+          <select value={reviewRating} onChange={(event) => setReviewRating(Number(event.target.value))}>
+            {[5, 4, 3, 2, 1].map((value) => (
+              <option key={value} value={value}>
+                {value} star{value !== 1 ? 's' : ''}
+              </option>
+            ))}
+          </select>
+          <textarea
+            value={reviewComment}
+            onChange={(event) => setReviewComment(event.target.value)}
+            placeholder="Share your thoughts about the site..."
+            rows={2}
+            required
+          />
+          <button type="submit">POST REVIEW</button>
+        </form>
+
+        <ul className="review-list">
+          {reviews.map((review) => (
+            <li key={review.id}>
+              <div className="review-meta">
+                <strong>{review.author}</strong>
+                <span>{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</span>
+              </div>
+              <p>{review.comment}</p>
+              <small>{new Date(review.createdAt).toLocaleString()}</small>
+
+              {review.replies.length > 0 && (
+                <ul className="reply-list">
+                  {review.replies.map((reply) => (
+                    <li key={reply.id}>
+                      <div className="reply-meta">
+                        <strong>{reply.author}</strong>
+                        <small>{new Date(reply.createdAt).toLocaleString()}</small>
+                      </div>
+                      <p>{reply.message}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <form className="reply-form" onSubmit={(event) => onSubmitReply(event, review.id)}>
+                <input
+                  type="text"
+                  value={replyDrafts[review.id] || ''}
+                  onChange={(event) => onReplyChange(review.id, event.target.value)}
+                  placeholder="Write a reply..."
+                  maxLength={140}
+                  required
+                />
+                <button type="submit">Reply</button>
+              </form>
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   );
 };
