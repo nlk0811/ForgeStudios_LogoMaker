@@ -4,12 +4,20 @@ import { GeminiService } from './services/geminiService';
 import { EditedImage, ProcessingStatus } from './types';
 
 type Mode = 'generate' | 'edit';
+type ReviewReply = {
+  id: string;
+  author: string;
+  message: string;
+  createdAt: number;
+};
+
 type Review = {
   id: string;
   author: string;
   rating: number;
   comment: string;
   createdAt: number;
+  replies: ReviewReply[];
 };
 
 const STARTER_PROMPT =
@@ -20,6 +28,7 @@ const DEFAULT_REVIEW: Review = {
   rating: 1,
   comment: 'UI is mid',
   createdAt: Date.now(),
+  replies: [],
 };
 
 const App: React.FC = () => {
@@ -34,6 +43,7 @@ const App: React.FC = () => {
   const [reviewAuthor, setReviewAuthor] = useState('');
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
+  const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
   const inputRef = useRef<HTMLInputElement>(null);
 
   const isBusy = status === 'processing' || status === 'uploading';
@@ -143,12 +153,42 @@ const App: React.FC = () => {
       rating: reviewRating,
       comment: reviewComment.trim(),
       createdAt: Date.now(),
+      replies: [],
     };
 
     setReviews((prev) => [newReview, ...prev]);
     setReviewAuthor('');
     setReviewRating(5);
     setReviewComment('');
+  };
+
+  const onReplyChange = (reviewId: string, value: string) => {
+    setReplyDrafts((prev) => ({ ...prev, [reviewId]: value }));
+  };
+
+  const onSubmitReply = (event: React.FormEvent<HTMLFormElement>, reviewId: string) => {
+    event.preventDefault();
+    const message = (replyDrafts[reviewId] || '').trim();
+    if (!message) return;
+
+    const reply: ReviewReply = {
+      id: crypto.randomUUID(),
+      author: 'You',
+      message,
+      createdAt: Date.now(),
+    };
+
+    setReviews((prev) =>
+      prev.map((review) =>
+        review.id === reviewId
+          ? {
+              ...review,
+              replies: [...review.replies, reply],
+            }
+          : review,
+      ),
+    );
+    setReplyDrafts((prev) => ({ ...prev, [reviewId]: '' }));
   };
 
   return (
@@ -293,6 +333,32 @@ const App: React.FC = () => {
               </div>
               <p>{review.comment}</p>
               <small>{new Date(review.createdAt).toLocaleString()}</small>
+
+              {review.replies.length > 0 && (
+                <ul className="reply-list">
+                  {review.replies.map((reply) => (
+                    <li key={reply.id}>
+                      <div className="reply-meta">
+                        <strong>{reply.author}</strong>
+                        <small>{new Date(reply.createdAt).toLocaleString()}</small>
+                      </div>
+                      <p>{reply.message}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <form className="reply-form" onSubmit={(event) => onSubmitReply(event, review.id)}>
+                <input
+                  type="text"
+                  value={replyDrafts[review.id] || ''}
+                  onChange={(event) => onReplyChange(review.id, event.target.value)}
+                  placeholder="Write a reply..."
+                  maxLength={140}
+                  required
+                />
+                <button type="submit">Reply</button>
+              </form>
             </li>
           ))}
         </ul>
